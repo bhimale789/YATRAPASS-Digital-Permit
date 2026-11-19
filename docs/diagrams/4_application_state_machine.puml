@@ -1,0 +1,54 @@
+@startuml application_state_machine
+skinparam dpi 170
+skinparam shadowing false
+skinparam ArrowColor #1a5f8f
+skinparam ArrowFontColor #5b6b7a
+skinparam ArrowFontSize 11
+skinparam state {
+  BackgroundColor #e8f1f8
+  BorderColor #1a5f8f
+  FontColor #0f3d5e
+  AttributeFontColor #3c4a57
+  AttributeFontSize 12
+  FontSize 14
+  BackgroundColor<<success>> #e3f4e8
+  BorderColor<<success>> #3c8d5a
+  BackgroundColor<<fail>> #fbe9e9
+  BorderColor<<fail>> #b94a4a
+  BackgroundColor<<closed>> #f0f0f0
+  BorderColor<<closed>> #5b6b7a
+}
+hide stereotype
+
+title YatraPass — Application State Machine
+
+state PENDING : Submitted by tourist;\nwaiting for review
+state UNDER_REVIEW : Administrator is\nchecking documents
+state APPROVED <<success>> : Permit has been issued
+state REJECTED <<fail>> : Reason recorded
+state CANCELLED <<closed>> : Withdrawn by tourist
+
+[*] --> PENDING : Tourist submits application\n[profile complete, valid dates,\nwithin max days, no overlap]
+PENDING --> UNDER_REVIEW : Admin starts review
+PENDING --> REJECTED : Admin rejects\n[reason given]
+PENDING --> CANCELLED : Tourist cancels
+UNDER_REVIEW --> APPROVED : Admin approves\n[passport uploaded, area active,\ndates not passed, no overlap]\n/ create permit + QR
+UNDER_REVIEW --> REJECTED : Admin rejects\n[reason given]
+UNDER_REVIEW --> CANCELLED : Tourist cancels
+APPROVED --> [*]
+REJECTED --> [*]
+CANCELLED --> [*]
+
+note right of PENDING
+  If an admin approves a PENDING
+  application directly, the system
+  passes through UNDER_REVIEW in the
+  same transaction, so the history
+  is always complete.
+end note
+
+note bottom of APPROVED
+  APPROVED, REJECTED and CANCELLED are terminal.
+  Any other change is refused with HTTP 409.
+end note
+@enduml
