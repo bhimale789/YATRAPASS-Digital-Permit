@@ -1,0 +1,25 @@
+# Test-only settings. Secrets here are throwaway values used exclusively by the test suite.
+app:
+  base-url: http://test.local
+  security:
+    jwt:
+      secret: dGVzdC1vbmx5LWp3dC1zZWNyZXQtdGhhdC1pcy1sb25nLWVub3VnaC1mb3ItaHMyNTY=
+    login-rate-limit:
+      max-attempts: 1000
+  qr:
+    encryption-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+  storage:
+    path: ${java.io.tmpdir}/tourist-permit-test-uploads
+  # Background jobs are invoked explicitly by tests.
+  notifications:
+    dispatch-initial-delay: P1D
+  payments:
+    reconcile-initial-delay: P1D
+
+springdoc:
+  api-docs:
+    enabled: true
+
+logging:
+  level:
+    org.testcontainers: WARN
