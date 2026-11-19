@@ -1,0 +1,80 @@
+@startuml activity_diagram
+skinparam dpi 170
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #e8f1f8
+  BorderColor #1a5f8f
+  FontColor #1d2731
+  DiamondBackgroundColor #fdf3e7
+  DiamondBorderColor #d9822b
+}
+skinparam swimlane {
+  BorderColor #0f3d5e
+  TitleFontColor #0f3d5e
+  TitleFontStyle bold
+}
+skinparam ArrowColor #5b6b7a
+
+title YatraPass — Activity Diagram: from application to checkpoint verification
+
+|Tourist|
+start
+:Register / log in;
+if (Profile complete?\n(passport, nationality,\ndate of birth, phone)) then (no)
+  :Complete profile;
+else (yes)
+endif
+repeat
+  :Select area and travel dates;
+  :Enter purpose and submit application;
+  |System|
+  :Validate request\n(start not in past, end after start,\nmaximum stay, no overlapping permit);
+repeat while (Valid?) is (no — show error)
+->yes;
+:Create application\n(status PENDING);
+|Tourist|
+:Upload documents\n(passport scan required);
+|Administrator|
+:Open application\nand start review;
+|System|
+:Status → UNDER_REVIEW;
+|Administrator|
+:Check documents and\nmark them verified;
+if (Decision?) then (reject)
+  :Enter rejection reason;
+  |System|
+  :Status → REJECTED;
+  |Tourist|
+  :See rejection and reason;
+  stop
+else (approve)
+  |System|
+  if (Passport uploaded, area active,\ndates not passed, no overlap?) then (no)
+    :Refuse approval\nand show reason;
+    |Administrator|
+    :Ask tourist to fix\nor reject application;
+    stop
+  else (yes)
+    |System|
+    :Status → APPROVED;
+    :Create permit (ACTIVE);
+    :Generate secure QR token\n(store hash + encrypted copy);
+  endif
+endif
+|Tourist|
+:View QR code and\ndownload permit PDF;
+:Travel to checkpoint;
+|Officer|
+:Scan QR with phone camera;
+|System|
+:Run verification checks\n(token, revoked, cancelled,\nexpired, dates, area);
+:Record verification attempt\nand audit entry;
+if (Result?) then (VALID)
+  |Officer|
+  :See permit details\nand allow entry;
+else (not valid)
+  |Officer|
+  :See reason\nand deny entry;
+endif
+stop
+@enduml

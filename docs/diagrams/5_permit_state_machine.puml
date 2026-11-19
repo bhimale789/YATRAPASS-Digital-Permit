@@ -1,0 +1,50 @@
+@startuml permit_state_machine
+skinparam dpi 170
+skinparam shadowing false
+skinparam ArrowColor #1a5f8f
+skinparam ArrowFontColor #5b6b7a
+skinparam ArrowFontSize 11
+skinparam state {
+  BackgroundColor #e8f1f8
+  BorderColor #1a5f8f
+  FontColor #0f3d5e
+  AttributeFontColor #3c4a57
+  AttributeFontSize 12
+  FontSize 14
+  BackgroundColor<<success>> #e3f4e8
+  BorderColor<<success>> #3c8d5a
+  BackgroundColor<<fail>> #fbe9e9
+  BorderColor<<fail>> #b94a4a
+  BackgroundColor<<closed>> #f0f0f0
+  BorderColor<<closed>> #5b6b7a
+}
+hide stereotype
+
+title YatraPass — Permit State Machine
+
+state ACTIVE <<success>> : Valid from start date to end date\n(inclusive, Asia/Kathmandu time)\nQR scans can return VALID
+state EXPIRED <<closed>> : Scan returns PERMIT_EXPIRED
+state CANCELLED <<fail>> : Reason recorded\nScan returns PERMIT_CANCELLED
+state COMPLETED : Trip finished\nScan returns PERMIT_NOT_ACTIVE
+
+[*] --> ACTIVE : Application approved\n/ permit number PRM-YYYY-NNNNNN\n/ QR token generated
+ACTIVE --> EXPIRED : Scheduler (daily 00:05)\n[end date has passed]
+ACTIVE --> CANCELLED : Admin cancels\n[reason given]
+ACTIVE --> COMPLETED : Admin marks completed
+ACTIVE --> ACTIVE : Admin regenerates QR\n/ old token REVOKED,\nnew token issued
+EXPIRED --> [*]
+CANCELLED --> [*]
+COMPLETED --> [*]
+
+note left of ACTIVE
+  Verification also checks dates directly,
+  so a permit is never reported VALID
+  after its end date, even before the
+  expiry job has run.
+end note
+
+note bottom of CANCELLED
+  EXPIRED, CANCELLED and COMPLETED are terminal.
+  Any other change is refused with HTTP 409.
+end note
+@enduml

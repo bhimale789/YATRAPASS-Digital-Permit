@@ -1,0 +1,217 @@
+@startuml entity_relationship_diagram
+skinparam dpi 150
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+skinparam class {
+  BackgroundColor #ffffff
+  BorderColor #0f3d5e
+  HeaderBackgroundColor #cfe3f5
+  FontColor #0f3d5e
+  FontStyle bold
+  AttributeFontColor #1d2731
+  AttributeFontSize 11
+}
+skinparam ArrowColor #1a5f8f
+hide circle
+hide methods
+
+title YatraPass — Entity Relationship Diagram (PostgreSQL)
+
+entity "users" as users {
+  * <b>id</b> : BIGSERIAL <<PK>>
+  --
+  * email : VARCHAR(255) <<UNIQUE>>
+  * password_hash : VARCHAR(100)
+  * role : TOURIST | ADMIN | OFFICER
+  * enabled : BOOLEAN
+  * created_at : TIMESTAMPTZ
+  * updated_at : TIMESTAMPTZ
+}
+
+entity "tourist_profiles" as tp {
+  * <b>id</b> : BIGSERIAL <<PK>>
+  --
+  * user_id : BIGINT <<FK, UNIQUE>>
+  passport_number : VARCHAR(20) <<UNIQUE>>
+  * first_name : VARCHAR(100)
+  * last_name : VARCHAR(100)
+  nationality : VARCHAR(100)
+  date_of_birth : DATE
+  gender : VARCHAR(20)
+  phone : VARCHAR(30)
+  address : VARCHAR(500)
+  emergency_contact : VARCHAR(255)
+  * created_at / updated_at : TIMESTAMPTZ
+}
+
+entity "permit_areas" as areas {
+  * <b>id</b> : BIGSERIAL <<PK>>
+  --
+  * code : VARCHAR(30) <<UNIQUE>>
+  * name : VARCHAR(150)
+  description : VARCHAR(2000)
+  district : VARCHAR(100)
+  province : VARCHAR(100)
+  * permit_required : BOOLEAN
+  * maximum_days : INTEGER (> 0)
+  * fee : NUMERIC(12,2) (>= 0)
+  * active : BOOLEAN
+  photo_path : VARCHAR(500)
+  photo_mime_type : VARCHAR(100)
+  photo_updated_at : TIMESTAMPTZ
+  latitude : NUMERIC(9,6)
+  longitude : NUMERIC(9,6)
+  * created_at / updated_at : TIMESTAMPTZ
+}
+
+entity "permit_applications" as apps {
+  * <b>id</b> : BIGSERIAL <<PK>>
+  --
+  * application_number : VARCHAR(30) <<UNIQUE>>
+  * tourist_id : BIGINT <<FK>>
+  * area_id : BIGINT <<FK>>
+  * purpose : VARCHAR(1000)
+  * requested_start_date : DATE
+  * requested_end_date : DATE
+  * status : PENDING | UNDER_REVIEW |
+      APPROVED | REJECTED | CANCELLED
+  rejection_reason : VARCHAR(1000)
+  * submitted_at : TIMESTAMPTZ
+  reviewed_at : TIMESTAMPTZ
+  reviewed_by : BIGINT <<FK users>>
+  * version : BIGINT
+  * created_at / updated_at : TIMESTAMPTZ
+}
+
+entity "permit_documents" as docs {
+  * <b>id</b> : BIGSERIAL <<PK>>
+  --
+  * application_id : BIGINT <<FK>>
+  * document_type : PASSPORT | VISA | PHOTO |
+      TRAVEL_INSURANCE | ITINERARY | OTHER
+  * file_name : VARCHAR(255)
+  * storage_path : VARCHAR(500) <<UNIQUE>>
+  * mime_type : VARCHAR(100)
+  * file_size : BIGINT
+  * uploaded_at : TIMESTAMPTZ
+  * verified : BOOLEAN
+  verified_at : TIMESTAMPTZ
+  verified_by : BIGINT <<FK users>>
+}
+
+entity "permits" as permits {
+  * <b>id</b> : BIGSERIAL <<PK>>
+  --
+  * permit_number : VARCHAR(30) <<UNIQUE>>
+  * application_id : BIGINT <<FK, UNIQUE>>
+  * tourist_id : BIGINT <<FK>>
+  * area_id : BIGINT <<FK>>
+  * issue_date : DATE
+  * valid_from : DATE
+  * valid_until : DATE
+  * status : ACTIVE | EXPIRED |
+      CANCELLED | COMPLETED
+  * issued_by : BIGINT <<FK users>>
+  cancellation_reason : VARCHAR(1000)
+  * version : BIGINT
+  * created_at / updated_at : TIMESTAMPTZ
+}
+
+entity "verification_tokens" as tokens {
+  * <b>id</b> : BIGSERIAL <<PK>>
+  --
+  * permit_id : BIGINT <<FK>>
+  * token_hash : VARCHAR(64) <<UNIQUE>>
+  * token_ciphertext : VARCHAR(255)
+  * status : ACTIVE | REVOKED
+  * created_at : TIMESTAMPTZ
+  created_by : BIGINT <<FK users>>
+  revoked_at : TIMESTAMPTZ
+  revoked_by : BIGINT <<FK users>>
+  revocation_reason : VARCHAR(500)
+}
+
+entity "permit_verifications" as verifs {
+  * <b>id</b> : BIGSERIAL <<PK>>
+  --
+  permit_id : BIGINT <<FK, nullable>>
+  * verified_by : BIGINT <<FK users>>
+  * verified_at : TIMESTAMPTZ
+  * result : VALID | INVALID |
+      EXPIRED | CANCELLED
+  failure_reason : VARCHAR(30)
+  ip_address : VARCHAR(45)
+  user_agent : VARCHAR(500)
+  latitude : NUMERIC(9,6)
+  longitude : NUMERIC(9,6)
+}
+
+entity "refresh_tokens" as refresh {
+  * <b>id</b> : BIGSERIAL <<PK>>
+  --
+  * user_id : BIGINT <<FK>>
+  * token_hash : VARCHAR(64) <<UNIQUE>>
+  * expires_at : TIMESTAMPTZ
+  revoked_at : TIMESTAMPTZ
+  * created_at : TIMESTAMPTZ
+}
+
+entity "audit_logs" as audit {
+  * <b>id</b> : BIGSERIAL <<PK>>
+  --
+  actor_id : BIGINT <<FK users>>
+  actor_role : VARCHAR(20)
+  * action : VARCHAR(50)
+  entity_type : VARCHAR(50)
+  entity_id : VARCHAR(50)
+  ip_address : VARCHAR(45)
+  metadata : JSONB
+  * created_at : TIMESTAMPTZ
+}
+
+entity "road_conditions" as roads {
+  * <b>id</b> : BIGSERIAL <<PK>>
+  --
+  area_id : BIGINT <<FK, nullable>>
+  * title : VARCHAR(150)
+  description : VARCHAR(1000)
+  * status : OPEN | CAUTION |
+      PARTIALLY_BLOCKED | CLOSED
+  * geometry_type : POINT | LINE
+  * coordinates : JSONB
+  * active : BOOLEAN
+  created_by : BIGINT <<FK users>>
+  updated_by : BIGINT <<FK users>>
+  * version : BIGINT
+  * created_at / updated_at : TIMESTAMPTZ
+}
+
+' core business relationships
+users ||--o| tp : "has profile"
+tp ||--o{ apps : "submits"
+areas ||--o{ apps : "requested for"
+apps ||--o{ docs : "has"
+apps ||--o| permits : "results in"
+tp ||--o{ permits : "holds"
+areas ||--o{ permits : "valid for"
+permits ||--o{ tokens : "has QR tokens\n(max 1 ACTIVE)"
+permits |o--o{ verifs : "scanned in"
+areas |o--o{ roads : "has"
+
+' staff / account relationships
+users ||--o{ refresh : "sessions"
+users |o--o{ apps : "reviews"
+users |o--o{ docs : "verifies"
+users ||--o{ permits : "issues"
+users |o--o{ tokens : "creates / revokes"
+users ||--o{ verifs : "performs"
+users |o--o{ audit : "acts in"
+users |o--o{ roads : "creates / updates"
+
+legend bottom left
+  <b>●</b> = NOT NULL     PK = primary key     FK = foreign key
+  Crow's foot notation:  ||  exactly one    |o  zero or one    o{  zero or many
+endlegend
+@enduml

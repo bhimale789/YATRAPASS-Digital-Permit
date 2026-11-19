@@ -1,0 +1,102 @@
+@startuml use_case_diagram
+skinparam dpi 170
+skinparam shadowing false
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #e8f1f8
+  BorderColor #1a5f8f
+  FontColor #0f3d5e
+}
+skinparam rectangle {
+  BorderColor #0f3d5e
+  FontColor #0f3d5e
+  FontStyle bold
+}
+skinparam actor {
+  BorderColor #0f3d5e
+  BackgroundColor #ffffff
+}
+skinparam ArrowColor #5b6b7a
+left to right direction
+
+title YatraPass — Use Case Diagram
+
+actor "User" as User
+actor "Tourist" as Tourist
+actor "Administrator" as Admin
+actor "Officer" as Officer
+actor "Scheduler\n(system timer)" as Scheduler
+actor "OSRM routing\nservice" as OSRM <<external>>
+
+User <|-- Tourist
+User <|-- Admin
+User <|-- Officer
+
+rectangle "YatraPass System" {
+  usecase "Log in / log out" as UC_Login
+
+  usecase "Register account" as UC_Register
+  usecase "Manage own profile" as UC_Profile
+  usecase "Browse destinations\nand map" as UC_Browse
+  usecase "View driving route\nand road conditions" as UC_Route
+  usecase "Apply for permit" as UC_Apply
+  usecase "Upload documents" as UC_Upload
+  usecase "Track / cancel\napplication" as UC_Track
+  usecase "View permit QR code" as UC_QR
+  usecase "Download permit PDF" as UC_PDF
+
+  usecase "View dashboard" as UC_Dash
+  usecase "Review application" as UC_Review
+  usecase "Verify documents" as UC_VerifyDoc
+  usecase "Approve application" as UC_Approve
+  usecase "Reject application" as UC_Reject
+  usecase "Issue permit and\ngenerate QR" as UC_Issue
+  usecase "Manage permits\n(cancel / complete)" as UC_ManagePermit
+  usecase "Regenerate / revoke QR" as UC_Regen
+  usecase "Manage tourists\n(enable / disable)" as UC_Tourists
+  usecase "Manage areas,\nphotos and map pins" as UC_Areas
+  usecase "Manage road conditions" as UC_Roads
+  usecase "View verification history" as UC_History
+  usecase "View audit log" as UC_Audit
+
+  usecase "Scan and verify\npermit QR" as UC_Scan
+  usecase "Record verification\nattempt" as UC_Log
+  usecase "View officer dashboard" as UC_OfficerDash
+
+  usecase "Expire overdue permits" as UC_Expire
+}
+
+User --> UC_Login
+
+Tourist --> UC_Register
+Tourist --> UC_Profile
+Tourist --> UC_Browse
+Tourist --> UC_Apply
+Tourist --> UC_Track
+Tourist --> UC_QR
+Tourist --> UC_PDF
+UC_Browse <.. UC_Route : <<extend>>
+UC_Apply <.. UC_Upload : <<extend>>
+UC_Route --> OSRM
+
+Admin --> UC_Dash
+Admin --> UC_Review
+Admin --> UC_ManagePermit
+Admin --> UC_Regen
+Admin --> UC_Tourists
+Admin --> UC_Areas
+Admin --> UC_Roads
+Admin --> UC_History
+Admin --> UC_Audit
+Admin --> UC_Scan
+UC_Review ..> UC_VerifyDoc : <<include>>
+UC_Review <.. UC_Approve : <<extend>>
+UC_Review <.. UC_Reject : <<extend>>
+UC_Approve ..> UC_Issue : <<include>>
+
+Officer --> UC_Scan
+Officer --> UC_OfficerDash
+UC_Scan ..> UC_Log : <<include>>
+
+Scheduler --> UC_Expire
+@enduml
