@@ -1,0 +1,16 @@
+.env
+**/target/
+**/node_modules/
+**/dist/
+backend/data/
+*.log
+.idea/
+.vscode/
+scripts/e2e/qr.png
+certs/
+
+# Added before first push: env backups, cert backups, build artifacts
+.env.*
+!.env.example
+*.bak*
+*.tsbuildinfo
